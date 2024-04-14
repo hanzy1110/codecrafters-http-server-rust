@@ -5,6 +5,27 @@ use std::io::Read;
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
 const ERROR_RESPONSE: &str = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+const CRLF: &str = "\r\n";
+
+struct HTTPRequest {
+    path: String,
+    host: String,
+    user_agent: String,
+    additional: String
+}
+
+impl HTTPRequest {
+    fn new(request: String) -> Self {
+        let path = request.split(CRLF).nth(0).unwrap().to_owned();
+
+        Self {
+            path,
+            host:"".to_owned(),
+            user_agent: "".to_owned(),
+            additional: "".to_owned(),
+        }
+    }
+}
 
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -25,7 +46,8 @@ fn main() {
                         todo!("Tuve un error")
                     }
                 };
-                println!("{}", request);
+                let request = HTTPRequest::new(request.to_string());
+                println!("REQUEST PATH  ===> {}", request.path);
                 let response: &str = "HTTP/1.1 200 OK\r\n\r\n";
                 stream.write(response.as_bytes()).unwrap();
             }
