@@ -41,8 +41,11 @@ fn parse_response(status: &str, content_type: &str, length_header: &str, body: &
 }
 
 fn get_body(route: String) -> String {
-    let contents = route.split("/");
-    contents.collect::<Vec<&str>>().drain(0..2).collect()
+    let contents = route.split("echo/");
+
+    let out = contents.collect::<Vec<&str>>().drain(1..).collect();
+    println!("RESPONSE BODY {:?}", out);
+    out
 }
 
 fn main() {
