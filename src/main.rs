@@ -59,7 +59,9 @@ fn main() {
                 };
                 let request = HTTPRequest::new(request.to_string());
                 let route = request.get_route();
+                println!("route {:?}", route.split("/"));
                 if route.contains("echo") {
+                    println!("route contains echo");
                     let body = route.split("/").last().unwrap();
                     let length_header = format!("Content-Length: {}\r\n", body.len());
                     let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
