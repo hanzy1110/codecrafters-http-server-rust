@@ -1,5 +1,5 @@
 // Uncomment this block to pass the first stage
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 use std::io::Write;
 use std::io::Read;
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n\r\n";
@@ -30,6 +30,10 @@ impl HTTPRequest {
     }
 }
 
+fn write_response(response: &str, stream: &mut TcpStream) -> () {
+    stream.write(response.as_bytes()).unwrap();
+}
+
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     // Uncomment this block to pass the first stage
@@ -50,11 +54,10 @@ fn main() {
                     }
                 };
                 let request = HTTPRequest::new(request.to_string());
-                println!("REQUEST PATH  ===> {}", request.path);
-                let route = request.get_route();
-                println!("REQUEST ROUTE ===> {}", route);
-                let response: &str = "HTTP/1.1 200 OK\r\n\r\n";
-                stream.write(response.as_bytes()).unwrap();
+                match request.get_route().as_str() {
+                    "/" => write_response(OK_RESPONSE, &mut stream),
+                    _ => write_response(NOT_FOUND_RESPONSE, &mut stream)
+                }
             }
             Err(e) => {
                 println!("error: {}", e);
