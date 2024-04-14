@@ -64,16 +64,18 @@ fn main() {
                 println!("route {:?}", route.split("/").collect::<Vec<&str>>());
                 match route.as_str() {
                     "/" => write_response(OK_RESPONSE, &mut stream),
+                    v@_ => {
+                        if v.contains("echo") {
+                            println!("route contains echo");
+                            let body = route.split("/").last().unwrap();
+                            let length_header = format!("Content-Length: {}\r\n", body.len());
+                            let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
+                            write_response(&response, &mut stream);
+                        } else {
+                            write_response(NOT_FOUND_RESPONSE, &mut stream)
+                        }
+                    }
 
-                }
-                if route.contains("echo") {
-                    println!("route contains echo");
-                    let body = route.split("/").last().unwrap();
-                    let length_header = format!("Content-Length: {}\r\n", body.len());
-                    let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
-                    write_response(&response, &mut stream);
-                } else {
-                    write_response(NOT_FOUND_RESPONSE, &mut stream)
                 }
             }
             Err(e) => {
