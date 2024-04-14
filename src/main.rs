@@ -59,7 +59,7 @@ fn main() {
                 };
                 let request = HTTPRequest::new(request.to_string());
                 let route = request.get_route();
-                println!("route {:?}", route.split("/"));
+                println!("route {:?}", route.split("/").collect::<Vec<&str>>());
                 if route.contains("echo") {
                     println!("route contains echo");
                     let body = route.split("/").last().unwrap();
