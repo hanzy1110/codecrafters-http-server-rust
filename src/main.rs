@@ -5,7 +5,7 @@ use std::io::Read;
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
 const ERROR_RESPONSE: &str = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
-const TEXT_PLAIN: &str = "Content-Type: text/plain";
+const TEXT_PLAIN: &str = "Content-Type: text/plain\r\n\r\n";
 const CRLF: &str = "\r\n";
 
 #[derive(Debug)]
