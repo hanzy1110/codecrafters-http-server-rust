@@ -70,6 +70,7 @@ fn main() {
                             let body = route.split("/").last().unwrap();
                             let length_header = format!("Content-Length: {}\r\n", body.len());
                             let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
+                            println!("{}", response);
                             write_response(&response, &mut stream);
                         } else {
                             write_response(NOT_FOUND_RESPONSE, &mut stream)
