@@ -68,11 +68,9 @@ fn main() {
                     let length_header = format!("Content-Length: {}\r\n", body.len());
                     let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
                     write_response(&response, &mut stream);
+                } else {
+                    write_response(NOT_FOUND_RESPONSE, &mut stream)
                 }
-                // match request.get_route().as_str() {
-                //     "/" => write_response(OK_RESPONSE, &mut stream),
-                //     _ => write_response(NOT_FOUND_RESPONSE, &mut stream)
-                // }
             }
             Err(e) => {
                 println!("error: {}", e);
