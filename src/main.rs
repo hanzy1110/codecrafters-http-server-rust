@@ -33,7 +33,7 @@ impl HTTPRequest {
 }
 
 fn write_response(response: &str, stream: &mut TcpStream) -> () {
-    let response = format!("{}\r\n", response).as_str();
+    let response = format!("{}\r\n", response);
     stream.write(response.as_bytes()).unwrap();
 }
 fn parse_response(status: &str, content_type: &str, length_header: &str, body: &str) -> String {
