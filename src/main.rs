@@ -62,6 +62,10 @@ fn main() {
                 println!("{:?}", request);
                 let route = request.get_route();
                 println!("route {:?}", route.split("/").collect::<Vec<&str>>());
+                match route.as_str() {
+                    "/" => write_response(OK_RESPONSE, &mut stream),
+
+                }
                 if route.contains("echo") {
                     println!("route contains echo");
                     let body = route.split("/").last().unwrap();
@@ -69,7 +73,7 @@ fn main() {
                     let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
                     write_response(&response, &mut stream);
                 } else {
-                    write_response(OK_RESPONSE, &mut stream)
+                    write_response(NOT_FOUND_RESPONSE, &mut stream)
                 }
             }
             Err(e) => {
