@@ -25,6 +25,9 @@ impl HTTPRequest {
             additional: "".to_owned(),
         }
     }
+    fn get_route(&self) -> String {
+        self.path.split(" ").nth(1).unwrap().to_owned()
+    }
 }
 
 fn main() {
@@ -48,6 +51,8 @@ fn main() {
                 };
                 let request = HTTPRequest::new(request.to_string());
                 println!("REQUEST PATH  ===> {}", request.path);
+                let route = request.get_route();
+                println!("REQUEST ROUTE ===> {}", route);
                 let response: &str = "HTTP/1.1 200 OK\r\n\r\n";
                 stream.write(response.as_bytes()).unwrap();
             }
