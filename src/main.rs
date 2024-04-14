@@ -40,6 +40,11 @@ fn parse_response(status: &str, content_type: &str, length_header: &str, body: &
     format!("{status}{content_type}{length_header}\r\n{body}")
 }
 
+fn get_body(route: String) -> String {
+    let contents = route.split("/");
+    contents.collect::<Vec<&str>>().drain(0..2).collect()
+}
+
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     // Uncomment this block to pass the first stage
@@ -67,8 +72,7 @@ fn main() {
                     "/" => write_response(OK_RESPONSE, &mut stream),
                     v@_ => {
                         if v.contains("echo") {
-                            println!("route contains echo");
-                            let body = route.split("/").last().unwrap();
+                            let body = get_body(route);
                             let length_header = format!("Content-Length: {}\r\n", body.len());
                             let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
                             println!("{}", response);
