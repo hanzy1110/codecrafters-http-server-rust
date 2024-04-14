@@ -8,6 +8,7 @@ const ERROR_RESPONSE: &str = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
 const TEXT_PLAIN: &str = "Content-Type: text/plain";
 const CRLF: &str = "\r\n";
 
+#[derive(Debug)]
 struct HTTPRequest {
     path: String,
     host: String,
@@ -58,6 +59,7 @@ fn main() {
                     }
                 };
                 let request = HTTPRequest::new(request.to_string());
+                println!("{:?}", request);
                 let route = request.get_route();
                 println!("route {:?}", route.split("/").collect::<Vec<&str>>());
                 if route.contains("echo") {
