@@ -5,6 +5,7 @@ use std::io::Read;
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n\r\n";
 const ERROR_RESPONSE: &str = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+const TEXT_PLAIN: &str = "Content-Type: text/plain";
 const CRLF: &str = "\r\n";
 
 struct HTTPRequest {
@@ -33,6 +34,9 @@ impl HTTPRequest {
 fn write_response(response: &str, stream: &mut TcpStream) -> () {
     stream.write(response.as_bytes()).unwrap();
 }
+fn parse_response(status: &str, content_type: &str, length_header: &str, body: &str) -> String {
+    format!("{status}{content_type}{length_header}\r\n{body}")
+}
 
 fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -54,10 +58,17 @@ fn main() {
                     }
                 };
                 let request = HTTPRequest::new(request.to_string());
-                match request.get_route().as_str() {
-                    "/" => write_response(OK_RESPONSE, &mut stream),
-                    _ => write_response(NOT_FOUND_RESPONSE, &mut stream)
+                let route = request.get_route();
+                if route.contains("echo") {
+                    let body = route.split("/").last().unwrap();
+                    let length_header = format!("Content-Length: {}\r\n", body.len());
+                    let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
+                    write_response(&response, &mut stream);
                 }
+                // match request.get_route().as_str() {
+                //     "/" => write_response(OK_RESPONSE, &mut stream),
+                //     _ => write_response(NOT_FOUND_RESPONSE, &mut stream)
+                // }
             }
             Err(e) => {
                 println!("error: {}", e);
