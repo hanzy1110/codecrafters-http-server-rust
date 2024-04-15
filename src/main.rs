@@ -2,6 +2,8 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::Write;
 use std::io::Read;
+use std::thread::{spawn, Thread};
+
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n";
 const ERROR_RESPONSE: &str = "HTTP/1.1 500 Internal Server Error\r\n";
@@ -13,18 +15,21 @@ struct HTTPRequest {
     path: String,
     host: String,
     user_agent: String,
-    additional: String
+    additional: Option<String>
 }
 
 impl HTTPRequest {
     fn new(request: String) -> Self {
         let path = request.split(CRLF).nth(0).unwrap().to_owned();
+        let host = request.clone().split(CRLF).nth(1).unwrap().to_owned();
+        let user_agent = request.clone().split(CRLF).nth(2).unwrap().to_owned();
+        // let additional = request.clone().split(CRLF).nth(3).unwrap().to_owned();
 
         Self {
             path,
-            host:"".to_owned(),
-            user_agent: "".to_owned(),
-            additional: "".to_owned(),
+            host,
+            user_agent,
+            additional: None
         }
     }
     fn get_route(&self) -> String {
@@ -48,7 +53,48 @@ fn get_body(route: String) -> String {
     out
 }
 
-fn main() {
+async fn route_request(stream: &mut TcpStream) -> anyhow::Result<()> {
+        let mut buffer = [0;1024];
+        println!("accepted new connection");
+        let request = match stream.read(&mut buffer) {
+            Ok(_) => {
+                let content = String::from_utf8_lossy(&buffer);
+                HTTPRequest::new(content.to_string())
+            },
+            Err(e) => {
+                todo!("Tuve un error")
+            }
+        };
+        let route = request.get_route();
+        match route.as_str() {
+            "/" => write_response(OK_RESPONSE,  stream),
+            "/user-agent" => {
+                let user_agent = request.user_agent.split(": ").nth(1).unwrap();
+                let content_length = user_agent.len();
+                let length_header = format!("Content-Length: {}\r\n", content_length);
+                let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &user_agent);
+                println!("{}", response);
+                write_response(&response,  stream);
+            },
+            v@_ => {
+                if v.contains("echo") {
+                    let body = get_body(route);
+                    let length_header = format!("Content-Length: {}\r\n", body.len());
+                    let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
+                    println!("{}", response);
+                    write_response(&response,  stream);
+                } else {
+                    write_response(NOT_FOUND_RESPONSE,  stream)
+                }
+            }
+
+        }
+
+    Ok(())
+}
+
+#[tokio::main()]
+async fn main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     // Uncomment this block to pass the first stage
     //
@@ -57,35 +103,7 @@ fn main() {
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let mut buffer = [0;1024];
-                println!("accepted new connection");
-                let request = match stream.read(&mut buffer) {
-                    Ok(_) => {
-                        String::from_utf8_lossy(&buffer)
-                    },
-                    Err(e) => {
-                        todo!("Tuve un error")
-                    }
-                };
-                let request = HTTPRequest::new(request.to_string());
-                println!("{:?}", request);
-                let route = request.get_route();
-                println!("route {:?}", route.split("/").collect::<Vec<&str>>());
-                match route.as_str() {
-                    "/" => write_response(OK_RESPONSE, &mut stream),
-                    v@_ => {
-                        if v.contains("echo") {
-                            let body = get_body(route);
-                            let length_header = format!("Content-Length: {}\r\n", body.len());
-                            let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
-                            println!("{}", response);
-                            write_response(&response, &mut stream);
-                        } else {
-                            write_response(NOT_FOUND_RESPONSE, &mut stream)
-                        }
-                    }
-
-                }
+                let _handled = route_request(&mut stream).await;
             }
             Err(e) => {
                 println!("error: {}", e);
