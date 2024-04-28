@@ -2,7 +2,7 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::Write;
 use std::io::Read;
-use std::thread::{spawn, Thread};
+use std::thread::{self, spawn, Thread};
 
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n";
@@ -53,7 +53,7 @@ fn get_body(route: String) -> String {
     out
 }
 
-async fn route_request(stream: &mut TcpStream) -> anyhow::Result<()> {
+fn route_request(stream: &mut TcpStream) -> anyhow::Result<()> {
         let mut buffer = [0;1024];
         println!("accepted new connection");
         let request = match stream.read(&mut buffer) {
@@ -93,21 +93,26 @@ async fn route_request(stream: &mut TcpStream) -> anyhow::Result<()> {
     Ok(())
 }
 
-#[tokio::main()]
-async fn main() {
+// #[tokio::main()]
+fn main() -> anyhow::Result<()> {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     // Uncomment this block to pass the first stage
     //
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 
+    let mut threads = vec![];
+
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
-                let _handled = route_request(&mut stream).await;
+
+                println!("Accepted Connection...");
+                threads.push(thread::spawn(move || route_request(&mut stream)));
             }
             Err(e) => {
                 println!("error: {}", e);
             }
         }
     }
+    Ok(())
 }
