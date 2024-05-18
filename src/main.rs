@@ -96,9 +96,8 @@ fn route_request(stream: &mut TcpStream, path: PathBuf) -> anyhow::Result<()> {
                     let complete_path = path.join(filepath);
                     println!("COMPLETE PATH =>> {:?}", complete_path);
                     if complete_path.exists() {
-                        let body = get_body(route);
-                        let length_header = format!("Content-Length: {}\r\n", body.len());
-                        let response = parse_response(OK_RESPONSE, OCTECT_STREAM, &length_header, &body);
+                        let length_header = format!("Content-Length: {}\r\n", filepath.len());
+                        let response = parse_response(OK_RESPONSE, OCTECT_STREAM, &length_header, "");
                         println!("{}", response);
                         write_response(&response,  stream);
                     } else {
