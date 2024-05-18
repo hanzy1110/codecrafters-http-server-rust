@@ -94,7 +94,7 @@ fn route_request(stream: &mut TcpStream, path: PathBuf) -> anyhow::Result<()> {
                 } else if let Some(caps) = files_re.captures(v) {
                     let filepath = &caps["path"];
                     let complete_path = path.join(filepath);
-                    println!("COMPLETE PATH =>> {:?}", complete_path);
+                    println!("COMPLETE PATH =>> {:?} - FILE PATH {:?}", complete_path, filepath);
                     if complete_path.exists() {
                         let body = std::fs::read_to_string(complete_path).unwrap();
                         let length_header = format!("Content-Length: {}\r\n", body.len());
