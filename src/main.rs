@@ -94,6 +94,7 @@ fn route_request(stream: &mut TcpStream, path: PathBuf) -> anyhow::Result<()> {
                 } else if let Some(caps) = files_re.captures(v) {
                     let filepath = &caps["path"];
                     let complete_path = path.join(filepath);
+                    println!("COMPLETE PATH =>> {:?}", complete_path);
                     if complete_path.exists() {
                         let body = get_body(route);
                         let length_header = format!("Content-Length: {}\r\n", body.len());
