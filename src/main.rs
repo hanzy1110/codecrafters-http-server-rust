@@ -132,6 +132,8 @@ fn main() -> anyhow::Result<()> {
 
     if got_dir {
         path = path.join(args.get(2).unwrap());
+        println!("PATH PROVIDED ==> {:?}", path);
+
     } else {
         println!("ERROR NO PATH PROVIDED!!");
         std::process::exit(1);
