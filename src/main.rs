@@ -135,7 +135,7 @@ fn main() -> anyhow::Result<()> {
 
     } else {
         println!("ERROR NO PATH PROVIDED!!");
-        std::process::exit(1);
+        // std::process::exit(1);
     }
 
 
