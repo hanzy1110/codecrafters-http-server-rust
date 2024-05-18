@@ -1,14 +1,21 @@
+use std::env;
 // Uncomment this block to pass the first stage
 use std::net::{TcpListener, TcpStream};
 use std::io::Write;
 use std::io::Read;
+use std::path::PathBuf;
 use std::thread::{self, spawn, Thread};
+
+use regex::Regex;
 
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n";
 const ERROR_RESPONSE: &str = "HTTP/1.1 500 Internal Server Error\r\n";
 const TEXT_PLAIN: &str = "Content-Type: text/plain\r\n";
+const OCTECT_STREAM: &str = "Content-Type: octect-stream\r\n";
 const CRLF: &str = "\r\n";
+
+const FILE_RQ_PATTERN: &str = r"/files/(?<path>\w+?)";
 
 #[derive(Debug)]
 struct HTTPRequest {
@@ -53,7 +60,8 @@ fn get_body(route: String) -> String {
     out
 }
 
-fn route_request(stream: &mut TcpStream) -> anyhow::Result<()> {
+fn route_request(stream: &mut TcpStream, path: PathBuf) -> anyhow::Result<()> {
+        let files_re = Regex::new(FILE_RQ_PATTERN).unwrap();
         let mut buffer = [0;1024];
         println!("accepted new connection");
         let request = match stream.read(&mut buffer) {
@@ -83,7 +91,20 @@ fn route_request(stream: &mut TcpStream) -> anyhow::Result<()> {
                     let response = parse_response(OK_RESPONSE, TEXT_PLAIN, &length_header, &body);
                     println!("{}", response);
                     write_response(&response,  stream);
-                } else {
+                } else if let Some(caps) = files_re.captures(v) {
+                    let filepath = &caps["path"];
+                    let complete_path = path.join(filepath);
+                    if complete_path.exists() {
+                        let body = get_body(route);
+                        let length_header = format!("Content-Length: {}\r\n", body.len());
+                        let response = parse_response(OK_RESPONSE, OCTECT_STREAM, &length_header, &body);
+                        println!("{}", response);
+                        write_response(&response,  stream);
+                    } else {
+                        write_response(NOT_FOUND_RESPONSE,  stream)
+                    }
+                }
+                else {
                     write_response(NOT_FOUND_RESPONSE,  stream)
                 }
             }
@@ -98,6 +119,24 @@ fn main() -> anyhow::Result<()> {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     // Uncomment this block to pass the first stage
     //
+    let mut path = PathBuf::new();
+    let args = env::args().collect::<Vec<String>>();
+    let got_dir = args.get(1).map(|v|{
+        if v.starts_with("--directory") {
+            Some(v)
+        } else {
+            None
+        }
+    }).is_some();
+
+    if got_dir {
+        path = path.join(args.get(2).unwrap());
+    } else {
+        println!("ERROR NO PATH PROVIDED!!");
+        std::process::exit(1);
+    }
+
+
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
 
     let mut threads = vec![];
@@ -107,7 +146,8 @@ fn main() -> anyhow::Result<()> {
             Ok(mut stream) => {
 
                 println!("Accepted Connection...");
-                threads.push(thread::spawn(move || route_request(&mut stream)));
+                let path = path.clone();
+                threads.push(thread::spawn(move || route_request(&mut stream, path)));
             }
             Err(e) => {
                 println!("error: {}", e);
