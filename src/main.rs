@@ -15,7 +15,7 @@ const TEXT_PLAIN: &str = "Content-Type: text/plain\r\n";
 const OCTECT_STREAM: &str = "Content-Type: application/octet-stream\r\n";
 const CRLF: &str = "\r\n";
 
-const FILE_RQ_PATTERN: &str = r"/files/(?<path>.*?)";
+const FILE_RQ_PATTERN: &str = r"/files/(?<path>.*)";
 
 #[derive(Debug)]
 struct HTTPRequest {
