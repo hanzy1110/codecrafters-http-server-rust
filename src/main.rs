@@ -12,7 +12,7 @@ const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 NOT FOUND\r\n";
 const ERROR_RESPONSE: &str = "HTTP/1.1 500 Internal Server Error\r\n";
 const TEXT_PLAIN: &str = "Content-Type: text/plain\r\n";
-const OCTECT_STREAM: &str = "Content-Type: octect-stream\r\n";
+const OCTECT_STREAM: &str = "Content-Type: application/octet-stream\r\n";
 const CRLF: &str = "\r\n";
 
 const FILE_RQ_PATTERN: &str = r"/files/(?<path>.*?)";
