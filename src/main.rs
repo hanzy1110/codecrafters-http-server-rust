@@ -9,6 +9,7 @@ use std::thread::{self, spawn, Thread};
 use regex::Regex;
 
 const OK_RESPONSE: &str = "HTTP/1.1 200 OK\r\n";
+const CREATED_RESPONSE: &str = "HTTP/1.1 201 CREATED\r\n";
 const NOT_FOUND_RESPONSE: &str = "HTTP/1.1 404 Not Found\r\n";
 const ERROR_RESPONSE: &str = "HTTP/1.1 500 Internal Server Error\r\n";
 const TEXT_PLAIN: &str = "Content-Type: text/plain\r\n";
@@ -22,23 +23,30 @@ struct HTTPRequest {
     path: String,
     host: String,
     user_agent: String,
-    additional: Option<String>
+    body: Option<String>
 }
 
 impl HTTPRequest {
     fn new(request: String) -> Self {
-        let path = request.split(CRLF).nth(0).unwrap().to_owned();
-        let host = request.clone().split(CRLF).nth(1).unwrap().to_owned();
-        let user_agent = request.clone().split(CRLF).nth(2).unwrap().to_owned();
-        // let additional = request.clone().split(CRLF).nth(3).unwrap().to_owned();
+        let rq_data = request.split(CRLF).map(|x| x.to_owned()).collect::<Vec<String>>();
+
+        let n = rq_data.len();
+
+        // let path = request.split(CRLF).nth(0).unwrap().to_owned();
+        // let host = request.clone().split(CRLF).nth(1).unwrap().to_owned();
 
         Self {
-            path,
-            host,
-            user_agent,
-            additional: None
+            path: rq_data[0].clone(),
+            host: rq_data[1].clone(),
+            user_agent: rq_data[2].clone(),
+            body: Some(rq_data[n-1].clone())
         }
     }
+
+    fn get_method(&self) -> String {
+        self.path.split(" ").nth(0).unwrap().to_owned()
+    }
+
     fn get_route(&self) -> String {
         self.path.split(" ").nth(1).unwrap().to_owned()
     }
@@ -95,14 +103,41 @@ fn route_request(stream: &mut TcpStream, path: PathBuf) -> anyhow::Result<()> {
                     let filepath = &caps["path"];
                     let complete_path = path.join(filepath);
                     println!("COMPLETE PATH =>> {:?} - FILE PATH {:?} -- ROUTE {:?}", complete_path, filepath, route.as_str());
-                    if complete_path.exists() {
-                        let body = std::fs::read_to_string(complete_path).unwrap();
-                        let length_header = format!("Content-Length: {}\r\n", body.len());
-                        let response = parse_response(OK_RESPONSE, OCTECT_STREAM, &length_header, &body);
-                        println!("{}", response);
-                        write_response(&response,  stream);
-                    } else {
-                        write_response(NOT_FOUND_RESPONSE,  stream)
+                    match request.get_method().as_str() {
+                       "POST" => {
+                           let file = std::fs::File::create(complete_path);
+
+                           match file {
+                               Ok(mut f) => {
+                                if f.write(request.body.unwrap().as_bytes()).is_ok() {
+                                    write_response(CREATED_RESPONSE, stream)
+                                } else {
+                                    write_response(ERROR_RESPONSE, stream)
+                                }
+                               },
+                               Err(_) => {
+                                write_response(ERROR_RESPONSE, stream)
+                               }
+                           }
+
+
+
+                       },
+                       "GET" => {
+                        if complete_path.exists() {
+                            let body = std::fs::read_to_string(complete_path).unwrap();
+                            let length_header = format!("Content-Length: {}\r\n", body.len());
+                            let response = parse_response(OK_RESPONSE, OCTECT_STREAM, &length_header, &body);
+                            println!("{}", response);
+                            write_response(&response,  stream);
+                        } else {
+                            write_response(NOT_FOUND_RESPONSE,  stream)
+                        }
+                       },
+                        _ => {
+                            write_response(ERROR_RESPONSE, stream)
+                        }
+
                     }
                 } else {
                     write_response(NOT_FOUND_RESPONSE,  stream)
